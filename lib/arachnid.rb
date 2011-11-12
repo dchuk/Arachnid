@@ -89,7 +89,7 @@ class Arachnid
 	end
 
 	def split_url_at_hash(url)
-		return url unless @split_url_at_hash
+		return url.to_s unless @split_url_at_hash
 
 		return url.to_s.split('#')[0]
 
