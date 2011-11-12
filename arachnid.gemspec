@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name        = 'arachnid'
-  s.version     = '0.1.0'
+  s.version     = '0.1.1'
   s.date        = '2011-11-11'
   s.summary     = "Extremely fast and efficient domain spider"
-  s.description = "Arachnid relies on Bloom Filters to efficiently store visited urls and Typhoeus to avoid the overhead of Mechanize when crawling."
+  s.description = "Arachnid is a web crawler that relies on Bloom Filters to efficiently store visited urls and Typhoeus to avoid the overhead of Mechanize when crawling every page on a domain."
   s.authors     = ["dchuk"]
   s.email       = 'me@dchuk.com'
   s.files       = ["lib/arachnid.rb"]
