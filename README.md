@@ -54,8 +54,7 @@ Overview
 
 Arachnid was built as an alternative to Anemone, which is a great and powerful ruby spidering library but unfortunately one that succumbs to some pretty serious memory bloat on big sites with a ton of pages. Arachnid relies on Bloom Filters to store the list of visited urls so it's extremely efficient for hundreds of thousands of urls, and the requests are handled by Typhoeus which is much more lightweight than a threaded Mechanize solution. Additionally, Arachnid can be threaded with a gem such as Threadify so you can crawl multiple domains with multiple threads each. ...you can thread while you thread.
 
-Usage
------
+###Usage
 
     require 'arachnid'
 
@@ -69,8 +68,7 @@ Usage
 
     end
 
-Options for Arachnid.new
-------------------------
+###Options for Arachnid.new
 
 **:split_url_at_hash => true/false** - For each new url that is discovered on a page, if set to true, Arachnid will split the url at the # in the url and only store the portion before the #. This will allow you to crawl one level deep with # marks (such as a comments page) but not crawl new urls with # in them (such as specific comment permalinks). **:exclude_urls_with_hash** must be set to false for this option to work. Defaults to false.
 
@@ -78,7 +76,6 @@ Options for Arachnid.new
 
 **:exclude_urls_with_images => true/false** - Spider will ignore any url with common image file extensions. Defaults to false.
 
-Options for Arachnid.crawl
-------------------------
+###Options for Arachnid.crawl
 
 **:threads => (num_threads)** - Number of Typhoeus Hydra threads to use when crawling a domain. Out of respect for sites being crawled, keep this number under 10 threads. Defaults to 1.
