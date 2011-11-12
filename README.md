@@ -55,7 +55,7 @@ Overview
 Arachnid was built as an alternative to Anemone, which is a great and powerful ruby spidering library but unfortunately one that succumbs to some pretty serious memory bloat on big sites with a ton of pages. Arachnid relies on Bloom Filters to store the list of visited urls so it's extremely efficient for hundreds of thousands of urls, and the requests are handled by Typhoeus which is much more lightweight than a threaded Mechanize solution. Additionally, Arachnid can be threaded with a gem such as Threadify so you can crawl multiple domains with multiple threads each. ...you can thread while you thread.
 
 ###Installation
-    gem install 'arachnid'
+    gem install arachnid
 
 ###Usage
 
