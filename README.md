@@ -61,7 +61,7 @@ Arachnid was built as an alternative to Anemone, which is a great and powerful r
 
     require 'arachnid'
 
-    Arachnid.new("http://domain.com", {:exclude_urls_with_hash => true}).crawl({:threads => 2}) do |response|
+    Arachnid.new("http://domain.com", {:exclude_urls_with_images => true}).crawl({:threads => 2}) do |response|
       
         #"response" is just a Typhoeus response object.
         puts response.effective_url
