@@ -57,17 +57,17 @@ Arachnid was built as an alternative to Anemone, which is a great and powerful r
 Usage
 -----
 
-  require 'arachnid'
+    require 'arachnid'
 
-  Arachnid.new("http://domain.com").crawl({:threads => 2}) do |response|
-    
-      #"response" is just a Typhoeus response object.
-      puts response.effective_url
+    Arachnid.new("http://domain.com").crawl({:threads => 2}) do |response|
+      
+        #"response" is just a Typhoeus response object.
+        puts response.effective_url
 
-      #You can retrieve the body of the page with response.doc
-      parsed_body = Nokogiri:HTML.parse(response.doc)
+        #You can retrieve the body of the page with response.doc
+        parsed_body = Nokogiri:HTML.parse(response.doc)
 
-  end
+    end
 
 Options for Arachnid.new
 ------------------------
