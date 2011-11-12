@@ -79,6 +79,6 @@ Arachnid was built as an alternative to Anemone, which is a great and powerful r
 
 **:exclude_urls_with_images => true/false** - Spider will ignore any url with common image file extensions. Defaults to false.
 
-###Options for Arachnid.crawl
+###Options for .crawl
 
 **:threads => (num_threads)** - Number of Typhoeus Hydra threads to use when crawling a domain. Out of respect for sites being crawled, keep this number under 10 threads. Defaults to 1.
