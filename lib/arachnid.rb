@@ -4,6 +4,7 @@ require 'typhoeus'
 require 'bloomfilter-rb'
 require 'nokogiri'
 require 'domainatrix'
+require 'uri'
 
 class Arachnid
 
@@ -44,7 +45,15 @@ class Arachnid
 
 						links.each do |link|
 							if(internal_link?(link) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(link))
-								@global_queue << sanitize_link(split_url_at_hash(link))
+								
+								sanitized_link = sanitize_link(split_url_at_hash(link))
+								if(sanitized_link)
+
+									absolute_link = make_absolute(sanitized_link, response.effective_url)
+									if(absolute_link)
+										@global_queue << absolute_link
+									end
+								end
 							end
 						end
 
@@ -52,13 +61,12 @@ class Arachnid
 
 					@hydra.queue request
 
-					@global_visited.insert(q)
-					@global_queue.delete(q)
-
-				rescue URI::InvalidURIError => e
-					@global_visited.insert(q)
-					@global_queue.delete(q)
+				rescue URI::InvalidURIError, NoMethodError => e
+					puts "Exception caught: #{e}" if @debug == true
 				end
+
+				@global_visited.insert(q)
+				@global_queue.delete(q)
 			end
 
 			@hydra.run
@@ -121,7 +129,19 @@ class Arachnid
 	end
 
 	def sanitize_link(url)
-		return url.gsub(/\s+/, "%20")
+		begin
+			return url.gsub(/\s+/, "%20")
+		rescue
+			return false
+		end
+	end
+
+	def make_absolute( href, root )
+		begin
+	  		URI.parse(root).merge(URI.parse(href)).to_s
+	  	rescue URI::InvalidURIError, URI::InvalidComponentError => e
+	  		return false
+	  	end
 	end
 
 end
