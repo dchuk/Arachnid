@@ -120,7 +120,7 @@ class Arachnid
 		not_found = true
 
 		extensions.each do |e|
-			if(url.to_s[-e.size .. -1] == e.to_s)
+			if(url.to_s[-e.size .. -1].downcase == e.to_s.downcase)
 				not_found = false
 			end
 		end
