@@ -32,7 +32,7 @@ class Arachnid
 
 		@global_queue << @start_url
 		
-		while(@global_queue.size > 0 && (max_urls && @global_visited.size.to_i < max_urls))
+		while(@global_queue.size > 0 && (max_urls.nil? || @global_visited.size.to_i < max_urls))
 			temp_queue = @global_queue
 
 			temp_queue.each do |q|
