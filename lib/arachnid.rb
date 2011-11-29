@@ -21,7 +21,10 @@ class Arachnid
 
 	def crawl(options = {})
 
+		#defaults to 1 thread so people don't do a stupid amount of crawling on unsuspecting domains
 		threads = options[:threads] ? options[:threads] : 1
+		#defaults to -1 so it will always keep running until it runs out of urls
+		max_urls = options[:max_urls] ? options[:max_urls] : -1
 
 		@hydra = Typhoeus::Hydra.new(:max_concurrency => threads)
 		@global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
@@ -29,7 +32,7 @@ class Arachnid
 
 		@global_queue << @start_url
 		
-		while(@global_queue.size > 0)
+		while(@global_queue.size > 0 && @global_visited.size != max_urls)
 			temp_queue = @global_queue
 
 			temp_queue.each do |q|

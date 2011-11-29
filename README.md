@@ -68,7 +68,7 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 
     require 'arachnid'
 
-    Arachnid.new("http://domain.com", {:exclude_urls_with_images => true}).crawl({:threads => 2}) do |response|
+    Arachnid.new("http://domain.com", {:exclude_urls_with_images => true}).crawl({:threads => 2, :max_urls => 1000}) do |response|
       
         #"response" is just a Typhoeus response object.
         puts response.effective_url
@@ -89,3 +89,5 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 ###Options for .crawl
 
 **:threads => (num_threads)** - Number of Typhoeus Hydra threads to use when crawling a domain. Out of respect for sites being crawled, keep this number under 10 threads. Defaults to 1.
+
+**:max_urls => (num_urls)** - Total number of pages to crawl on any domain. Use this when crawling large sites or sites with a ton of tag and category pages, as they'll often have tens of thousands of pages with duplicate content and the crawler will run for way too long. Defaults to unlimted urls.
