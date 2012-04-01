@@ -49,12 +49,6 @@ class Arachnid
 
 					request.on_complete do |response|
 
-						if request.proxy != nil
-							puts "#{response.effective_url} via #{request.proxy}"
-						else
-							puts "#{response.effective_url}"
-						end
-
 						yield response
 
 						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
