@@ -86,7 +86,7 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 
 **:exclude_urls_with_images => true/false** - Spider will ignore any url with common image file extensions. Defaults to false.
 
-**:proxy_list => Array - Spider will choose one proxy at random for each request from the array. Format is: "ip:port:user:pass" or just "ip:port".
+**:proxy_list => Array** - Spider will choose one proxy at random for each request from the array. Format is: "ip:port:user:pass" or just "ip:port".
 
 ###Options for .crawl
 
