@@ -54,7 +54,8 @@ class Arachnid
 						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
 
 						links.each do |link|
-							if(internal_link?(link) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(link))
+							fullurl = make_absolute(link,response.effective_url)
+							if(internal_link?(fullurl) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(fullurl))
 								
 								sanitized_link = sanitize_link(split_url_at_hash(link))
 								if(sanitized_link)
