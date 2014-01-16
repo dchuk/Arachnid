@@ -73,8 +73,8 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
         #"response" is just a Typhoeus response object.
         puts response.effective_url
 
-        #You can retrieve the body of the page with response.doc
-        parsed_body = Nokogiri::HTML.parse(response.doc)
+        #You can retrieve the body of the page with response.body
+        parsed_body = Nokogiri::HTML.parse(response.body)
 
     end
 
@@ -85,6 +85,8 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 **:exclude_urls_with_hash => true/false** - Spider will ignore any url with a hash in the url (#). Set to true if crawling blogs or other pages that have a lot of # in permalinks. Defaults to false.
 
 **:exclude_urls_with_images => true/false** - Spider will ignore any url with common image file extensions. Defaults to false.
+
+**:proxy_list => Array** - Spider will choose one proxy at random for each request. Format is: "ip:port:user:pass" or "ip:port".
 
 ###Options for .crawl
 
