@@ -14,8 +14,7 @@ class Arachnid
 
 		@split_url_at_hash = options[:split_url_at_hash] ? options[:split_url_at_hash] : false
 		@exclude_urls_with_hash = options[:exclude_urls_with_hash] ? options[:exclude_urls_with_hash] : false
-		@exclude_urls_with_images = options[:exclude_urls_with_images] ? options[:exclude_urls_with_images] : false
-		@proxy_list = options[:proxy_list] ? options[:proxy_list] : nil
+		@exclude_urls_with_extensions = options[:exclude_urls_with_extensions] ? options[:exclude_urls_with_extensions] : false
 		
 		@debug = options[:debug] ? options[:debug] : false
 	end
@@ -26,8 +25,6 @@ class Arachnid
 		threads = options[:threads] ? options[:threads] : 1
 		#defaults to -1 so it will always keep running until it runs out of urls
 		max_urls = options[:max_urls] ? options[:max_urls] : nil
-
-
 
 		@hydra = Typhoeus::Hydra.new(:max_concurrency => threads)
 		@global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
@@ -41,11 +38,7 @@ class Arachnid
 			temp_queue.each do |q|
 
 				begin
-					ip,port,user,pass = grab_proxy
-
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true) if ip == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}") if ip != nil && user == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}", :proxy_username => user, :proxy_password => pass) if user != nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true)
 
 					request.on_complete do |response|
 
@@ -54,7 +47,7 @@ class Arachnid
 						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
 
 						links.each do |link|
-							if(internal_link?(link, response.effective_url) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(link))
+							if(internal_link?(link, response.effective_url) && !@global_visited.include?(make_absolute(link, response.effective_url)) && no_hash_in_url?(link) && ignore_extensions(link))
 								
 								sanitized_link = sanitize_link(split_url_at_hash(link))
 								if(sanitized_link)
@@ -77,6 +70,7 @@ class Arachnid
 
 				@global_visited.insert(q)
 				@global_queue.delete(q)
+
 			end
 
 			@hydra.run
@@ -86,7 +80,7 @@ class Arachnid
 	end
 
 	def parse_domain(url)
-		puts "Parsing URL: #{url}" if @debug == true
+		puts "Parsing URL: #{url}" if @debug
 
 		begin
 			parsed_domain = Domainatrix.parse(url)
@@ -97,17 +91,9 @@ class Arachnid
 				parsed_domain.domain + '.' + parsed_domain.public_suffix
 			end
 		rescue NoMethodError, Addressable::URI::InvalidURIError => e
-			puts "URL Parsing Exception (#{url}): #{e}" if @debug == true
+			puts "URL Parsing Exception (#{url}): #{e}"
 			return nil
 		end
-	end
-
-	def grab_proxy
-
-		return nil unless @proxy_list
-
-		return @proxy_list.sample.split(':')
-
 	end
 
 	def internal_link?(url, effective_url)
@@ -139,16 +125,16 @@ class Arachnid
 		end
 	end
 
-	def no_image_in_url?(url)
+	def ignore_extensions(url)
 		return true if url.to_s.length == 0
-		return true unless @exclude_urls_with_images
+		return true unless @exclude_urls_with_extensions
 
-		extensions = ['.jpg', '.gif', '.png', '.jpeg']
 		not_found = true
 
-		extensions.each do |e|
-			if(url.to_s[-e.size .. -1].downcase == e.to_s.downcase)
+		@exclude_urls_with_extensions.each do |e|
+			if(url.to_s.length > e.size && url.to_s[-e.size .. -1].downcase == e.to_s.downcase)
 				not_found = false
+				puts "#{e} Found At URL: #{url}" if @debug
 			end
 		end
 
@@ -164,8 +150,9 @@ class Arachnid
 	end
 
 	def make_absolute( href, root )
+
 		begin
-	  		URI.parse(root).merge(URI.parse(href)).to_s
+	  		URI.parse(root).merge(URI.parse(split_url_at_hash(href.to_s.gsub(/\s+/, "%20")))).to_s
 	  	rescue URI::InvalidURIError, URI::InvalidComponentError => e
 	  		return false
 	  	end

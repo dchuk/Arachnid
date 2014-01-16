@@ -84,7 +84,7 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 
 **:exclude_urls_with_hash => true/false** - Spider will ignore any url with a hash in the url (#). Set to true if crawling blogs or other pages that have a lot of # in permalinks. Defaults to false.
 
-**:exclude_urls_with_images => true/false** - Spider will ignore any url with common image file extensions. Defaults to false.
+**:exclude_urls_with_extensions => Array** - Spider will ignore any url with supplied file extensions as an array, like ['.pdf', '.jpg']. Defaults to false.
 
 **:proxy_list => Array** - Spider will choose one proxy at random for each request. Format is: "ip:port:user:pass" or "ip:port".
 
