@@ -47,7 +47,7 @@ class Arachnid
 						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
 
 						links.each do |link|
-							if(internal_link?(link) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(link))
+							if(internal_link?(link, response.effective_url) && !@global_visited.include?(split_url_at_hash(link)) && no_hash_in_url?(link) && no_image_in_url?(link))
 								
 								sanitized_link = sanitize_link(split_url_at_hash(link))
 								if(sanitized_link)
@@ -83,15 +83,23 @@ class Arachnid
 
 		begin
 			parsed_domain = Domainatrix.parse(url)
-			parsed_domain.subdomain + '.' + parsed_domain.domain + '.' + parsed_domain.public_suffix
+
+			if(parsed_domain.subdomain != "")
+				parsed_domain.subdomain + '.' + parsed_domain.domain + '.' + parsed_domain.public_suffix
+			else
+				parsed_domain.domain + '.' + parsed_domain.public_suffix
+			end
 		rescue NoMethodError, Addressable::URI::InvalidURIError => e
 			puts "URL Parsing Exception (#{url}): #{e}" if @debug == true
 			return nil
 		end
 	end
 
-	def internal_link?(url)
-		parsed_url = parse_domain(url)
+	def internal_link?(url, effective_url)
+
+		absolute_url = make_absolute(url, effective_url)
+
+		parsed_url = parse_domain(absolute_url)
 		if(@domain == parsed_url)
 			return true
 		else
@@ -117,6 +125,7 @@ class Arachnid
 	end
 
 	def no_image_in_url?(url)
+		return true if url.to_s.length == 0
 		return true unless @exclude_urls_with_images
 
 		extensions = ['.jpg', '.gif', '.png', '.jpeg']
