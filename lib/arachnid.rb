@@ -102,12 +102,6 @@ class Arachnid
 		end
 	end
 
-	def internal_link?(url, effective_url)
-
-		absolute_url = make_absolute(url, effective_url)
-
-		parsed_url = parse_domain(absolute_url)
-
 	def grab_proxy
 
 		return nil unless @proxy_list
