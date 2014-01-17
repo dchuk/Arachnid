@@ -15,6 +15,7 @@ class Arachnid
 		@split_url_at_hash = options[:split_url_at_hash] ? options[:split_url_at_hash] : false
 		@exclude_urls_with_hash = options[:exclude_urls_with_hash] ? options[:exclude_urls_with_hash] : false
 		@exclude_urls_with_extensions = options[:exclude_urls_with_extensions] ? options[:exclude_urls_with_extensions] : false
+		@proxy_list = options[:proxy_list] ? options[:proxy_list] : false
 		
 		@debug = options[:debug] ? options[:debug] : false
 	end
@@ -38,7 +39,11 @@ class Arachnid
 			temp_queue.each do |q|
 
 				begin
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true)
+					ip,port,user,pass = grab_proxy
+ 
+					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true) if ip == nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}") if ip != nil && user == nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}", :proxy_username => user, :proxy_password => pass) if user != nil
 
 					request.on_complete do |response|
 
@@ -76,6 +81,14 @@ class Arachnid
 			@hydra.run
 
 		end
+
+	end
+
+	def grab_proxy
+
+		return nil unless @proxy_list
+
+		return @proxy_list.sample.split(':')
 
 	end
 
