@@ -155,6 +155,7 @@ class Arachnid
 	end
 
 	def sanitize_link(url)
+		return false if url.start_with? 'javascript'
 		begin
 			return url.gsub(/\s+/, "%20")
 		rescue
