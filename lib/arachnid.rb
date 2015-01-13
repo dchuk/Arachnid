@@ -52,7 +52,7 @@ class Arachnid
 						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
 
 						links.each do |link|
-							if(internal_link?(link, response.effective_url) && !@global_visited.include?(make_absolute(link, response.effective_url)) && no_hash_in_url?(link) && ignore_extensions(link))
+							if(internal_link?(link, response.effective_url) && !@global_visited.include?(make_absolute(link, response.effective_url)) && no_hash_in_url?(link) && extension_not_ignored?(link))
 								
 								sanitized_link = sanitize_link(split_url_at_hash(link))
 								if(sanitized_link)
@@ -110,48 +110,27 @@ class Arachnid
 	end
 
 	def internal_link?(url, effective_url)
-
 		absolute_url = make_absolute(url, effective_url)
-
 		parsed_url = parse_domain(absolute_url)
-		if(@domain == parsed_url)
-			return true
-		else
-			return false
-		end
+		@domain == parsed_url
 	end
 
 	def split_url_at_hash(url)
 		return url.to_s unless @split_url_at_hash
-
 		return url.to_s.split('#')[0]
-
 	end
 
 	def no_hash_in_url?(url)
 		return true unless @exclude_urls_with_hash
 
-		if(url.to_s.scan(/#/).size > 0)
-			return false
-		else
-			return true
-		end
+		! url.to_s.scan(/#/).size > 0
 	end
 
-	def ignore_extensions(url)
+	def extension_not_ignored?(url)
 		return true if url.to_s.length == 0
 		return true unless @exclude_urls_with_extensions
 
-		not_found = true
-
-		@exclude_urls_with_extensions.each do |e|
-			if(url.to_s.length > e.size && url.to_s[-e.size .. -1].downcase == e.to_s.downcase)
-				not_found = false
-				puts "#{e} Found At URL: #{url}" if @debug
-			end
-		end
-
-		return not_found
+		@exclude_urls_with_extensions.find { |e| url.to_s.downcase.end_with? e.to_s.downcase }.nil?
 	end
 
 	def sanitize_link(url)

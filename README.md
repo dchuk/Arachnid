@@ -68,7 +68,7 @@ Arachnid was built to run on Ruby 1.9.2 I'll be honest, I haven't really tested 
 
     require 'arachnid'
 
-    Arachnid.new("http://domain.com", {:exclude_urls_with_images => true}).crawl({:threads => 2, :max_urls => 1000}) do |response|
+    Arachnid.new("http://domain.com", {:exclude_urls_with_extensions => ['.jpg']}).crawl({:threads => 2, :max_urls => 1000}) do |response|
       
         #"response" is just a Typhoeus response object.
         puts response.effective_url
