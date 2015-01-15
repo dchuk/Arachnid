@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.files       = ["lib/arachnid.rb"]
   s.homepage    = 'https://github.com/dchuk/Arachnid'
 
-  s.add_dependency('typhoeus',    '0.3.2')
+  s.add_dependency('typhoeus',    '0.7.0')
   s.add_dependency('bloomfilter-rb',    '2.1.1')
   s.add_dependency('nokogiri',    '1.5.0')
   s.add_dependency('domainatrix')

@@ -41,9 +41,9 @@ class Arachnid
 				begin
 					ip,port,user,pass = grab_proxy
  
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true) if ip == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}") if ip != nil && user == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}", :proxy_username => user, :proxy_password => pass) if user != nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :followlocation => true) if ip == nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :followlocation => true, :proxy => "#{ip}:#{port}") if ip != nil && user == nil
+					request = Typhoeus::Request.new(q, :timeout => 10000, :followlocation => true, :proxy => "#{ip}:#{port}", :proxy_username => user, :proxy_password => pass) if user != nil
 
 					request.on_complete do |response|
 
