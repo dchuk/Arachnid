@@ -134,7 +134,7 @@ class Arachnid
 	end
 
 	def sanitize_link(url)
-		return false if url.match(/^javascript|^\(|^mailto/)
+		return false if url.strip.match(/^javascript:|^\(|^mailto:|^about:/)
 		begin
 			return url.gsub(/\s+/, "%20")
 		rescue
