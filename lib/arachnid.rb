@@ -23,6 +23,7 @@ class Arachnid
   def crawl(options = {})
     threads = options[:threads] || 1
     max_urls = options[:max_urls]
+    filter = options[:filter]
 
     @hydra = Typhoeus::Hydra.new(:max_concurrency => threads)
     @global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
@@ -38,6 +39,10 @@ class Arachnid
         if !max_urls.nil? && @global_visited.size >= max_urls
           @global_queue = []
           break
+        end
+
+        if filter
+          next unless filter.call(q)
         end
 
         @global_visited.insert(q)
