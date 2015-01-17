@@ -9,10 +9,10 @@ require 'uri'
 
 class Arachnid
 
-  def initialize(url, options = {})
-    @start_url = url
+  def initialize(urls, options = {})
+    @start_urls = urls.is_a?(Array) ? urls : [urls]
     @debug = options[:debug]
-    @domain = parse_domain(url)
+    @domain = parse_domain(@start_urls[0])
     @split_url_at_hash = options[:split_url_at_hash]
     @exclude_urls_with_hash = options[:exclude_urls_with_hash]
     @exclude_urls_with_extensions = options[:exclude_urls_with_extensions]
@@ -28,7 +28,7 @@ class Arachnid
     @global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
     @global_queue = []
 
-    @global_queue << @start_url
+    @global_queue.concat @start_urls
 
     while not @global_queue.empty?
 
