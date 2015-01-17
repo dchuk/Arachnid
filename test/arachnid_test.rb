@@ -10,19 +10,18 @@ class ArachnidTest < Minitest::Test
     refute arachnid.extension_not_ignored?('http://example.org/example.jpg')
   end
 
-  def test_sanitizes_a_normal_href
+  def test_parses_domain
     arachnid = Arachnid.new 'example.com'
 
-    assert arachnid.sanitize_link('http://example.com/page.html')
+    assert_equal arachnid.parse_domain('www.example.com/link'), 'www.example.com'
   end
 
-  def test_does_not_sanitize_hrefs_with_javascript_or_mailto
-    arachnid = Arachnid.new 'example.com'
-
-    refute arachnid.sanitize_link('javascript:void(0)')
-    refute arachnid.sanitize_link('(javascript:void(0))')
-    refute arachnid.sanitize_link('mailto:info@example.com')
-    refute arachnid.sanitize_link('(mailto:info@example.com)')
+  def test_hash_detection
+    arachnid = Arachnid.new 'example.com', exclude_urls_with_hash: true
+    refute arachnid.no_hash_in_url? 'http://www.example.com/link#1'
+    
+    arachnid = Arachnid.new 'example.com', exclude_urls_with_hash: false
+    assert arachnid.no_hash_in_url? 'http://www.example.com/link#1'
   end
 
 end
