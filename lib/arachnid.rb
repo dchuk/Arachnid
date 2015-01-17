@@ -98,8 +98,6 @@ class Arachnid
   end
 
   def parse_domain(url)
-    puts "Parsing URL: #{url}" if @debug
-
     parsed_domain = Domainatrix.parse(url)
 
     if(parsed_domain.subdomain != "")
