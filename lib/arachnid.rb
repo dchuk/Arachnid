@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require 'tempfile'
 require 'typhoeus'
 require 'bloomfilter-rb'
 require 'nokogiri'
@@ -16,6 +17,7 @@ class Arachnid
     @exclude_urls_with_hash = options[:exclude_urls_with_hash]
     @exclude_urls_with_extensions = options[:exclude_urls_with_extensions]
     @proxy_list = options[:proxy_list]
+    @cookies_enabled = options[:enable_cookies]
   end
 
   def crawl(options = {})
@@ -47,6 +49,11 @@ class Arachnid
         options[:proxy] = "#{ip}:#{port}" unless ip.nil?
         options[:proxy_username] = user unless user.nil?
         options[:proxy_password] = pass unless pass.nil?
+        if @cookies_enabled
+          cookie_file = Tempfile.new 'cookies'
+          options[:cookiefile] = cookie_file
+          options[:cookiejar] = cookie_file
+        end
 
         request = Typhoeus::Request.new(q, options)
 
@@ -56,7 +63,7 @@ class Arachnid
 
           links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href').map(&:to_s)
           links.each do |link|
-            next if link.match(/^\(|^javascript:|^mailto:/)
+            next if link.match(/^\(|^javascript:|^mailto:|^#|^\s*$/)
             begin
 
               if internal_link?(link, response.effective_url) && 
