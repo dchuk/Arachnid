@@ -76,12 +76,12 @@ class Arachnid
                 no_hash_in_url?(link) &&
                 extension_not_ignored?(link)
 
-                absolute_link = make_absolute(sanitize_link(split_url_at_hash(link)), response.effective_url)
+                absolute_link = make_absolute(split_url_at_hash(link), response.effective_url)
                 @global_queue << absolute_link unless @global_queue.include?(absolute_link)
               end
 
             rescue URI::InvalidURIError, Addressable::URI::InvalidURIError => e
-              $stderr.puts "#{e.class}: ignored link #{link}"
+              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message})"
             end
           end
 
@@ -136,11 +136,14 @@ class Arachnid
   end
 
   def sanitize_link(url)
-    url.gsub(/\s+/, "%20")
+    hash_position = url.index('#')
+    left_part = hash_position ? url[0,hash_position] : url
+    sanitized = left_part.gsub(/[ éèêàâôïûùÉÈÊÀÂÔÏÛÙöäüßÖÄÜ]/) {|w| CGI::escape(w)}
+    sanitized + (hash_position ? url[hash_position..-1] : "")
   end
 
   def make_absolute( href, root )
-    URI.parse(root).merge(URI.parse(split_url_at_hash(href.gsub(/\s+/, "%20")))).to_s
+    URI.parse(root).merge(URI.parse(sanitize_link(split_url_at_hash(href)))).to_s
   end
 
 end

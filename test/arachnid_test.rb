@@ -3,6 +3,12 @@ require_relative '../lib/arachnid'
 require "minitest/autorun"
 
 class ArachnidTest < Minitest::Test
+  def test_sanitizes_url
+    arachnid = Arachnid.new 'example.com'
+
+    assert_equal "http://example.com/%C3%A9#anchor", arachnid.sanitize_link("http://example.com/é#anchor")
+  end
+
   def test_ignores_specified_extensions
     arachnid = Arachnid.new 'example.com', exclude_urls_with_extensions: ['.jpg']
 
