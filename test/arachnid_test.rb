@@ -3,10 +3,13 @@ require_relative '../lib/arachnid'
 require "minitest/autorun"
 
 class ArachnidTest < Minitest::Test
-  def test_sanitizes_url
+  def test_makes_a_url_absolute
     arachnid = Arachnid.new 'example.com'
 
-    assert_equal "http://example.com/%C3%A9#anchor", arachnid.sanitize_link("http://example.com/é#anchor")
+    assert_equal "http://example.com/é#anchor", arachnid.make_absolute("/é#anchor", "http://example.com")
+    assert_equal "http://example.com/é#anchor", arachnid.make_absolute("é#anchor", "http://example.com/a")
+    assert_equal "http://example.com/a/é#anchor", arachnid.make_absolute("é#anchor", "http://example.com/a/b")
+    assert_equal "http://other.org/a", arachnid.make_absolute("http://other.org/a", "http://example.com")
   end
 
   def test_ignores_specified_extensions

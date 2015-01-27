@@ -5,7 +5,7 @@ require 'typhoeus'
 require 'bloomfilter-rb'
 require 'nokogiri'
 require 'domainatrix'
-require 'uri'
+require 'addressable/uri'
 
 class Arachnid
 
@@ -80,7 +80,7 @@ class Arachnid
                 @global_queue << absolute_link unless @global_queue.include?(absolute_link)
               end
 
-            rescue URI::InvalidURIError, Addressable::URI::InvalidURIError => e
+            rescue => e
               $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message})"
             end
           end
@@ -135,15 +135,8 @@ class Arachnid
     @exclude_urls_with_extensions.find { |e| url.downcase.end_with? e.downcase }.nil?
   end
 
-  def sanitize_link(url)
-    hash_position = url.index('#')
-    left_part = hash_position ? url[0,hash_position] : url
-    sanitized = left_part.gsub(/[ éèêàâôïûùÉÈÊÀÂÔÏÛÙöäüßÖÄÜ]/) {|w| CGI::escape(w)}
-    sanitized + (hash_position ? url[hash_position..-1] : "")
-  end
-
-  def make_absolute( href, root )
-    URI.parse(root).merge(URI.parse(sanitize_link(split_url_at_hash(href)))).to_s
+  def make_absolute(href, root)
+    Addressable::URI.parse(root).join(Addressable::URI.parse(href)).to_s
   end
 
 end
