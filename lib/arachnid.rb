@@ -81,7 +81,7 @@ class Arachnid
               end
 
             rescue => e
-              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message})"
+              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message}) on page #{q}"
             end
           end
 
