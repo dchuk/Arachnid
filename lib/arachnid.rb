@@ -64,11 +64,13 @@ class Arachnid
 
         request.on_complete do |response|
 
+          next unless parse_domain(response.effective_url) == @domain
+
           yield response
 
           links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href').map(&:to_s)
           links.each do |link|
-            next if link.match(/^\(|^javascript:|^mailto:|^#|^\s*$/)
+            next if link.match(/^\(|^javascript:|^mailto:|^#|^\s*$|^about:/)
             begin
 
               if internal_link?(link, response.effective_url) && 
