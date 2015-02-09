@@ -1,174 +1,146 @@
 # encoding: utf-8
 
+require 'tempfile'
 require 'typhoeus'
 require 'bloomfilter-rb'
 require 'nokogiri'
 require 'domainatrix'
-require 'uri'
+require 'addressable/uri'
 
 class Arachnid
 
-	def initialize(url, options = {})
-		@start_url = url
-		@domain = parse_domain(url)
+  def initialize(urls, options = {})
+    @start_urls = urls.is_a?(Array) ? urls : [urls]
+    @debug = options[:debug]
+    @domain = Arachnid.parse_domain(@start_urls[0])
+    @split_url_at_hash = options[:split_url_at_hash]
+    @exclude_urls_with_hash = options[:exclude_urls_with_hash]
+    @exclude_urls_with_extensions = options[:exclude_urls_with_extensions]
+    @proxy_list = options[:proxy_list]
+    @cookies_enabled = options[:enable_cookies]
+  end
 
-		@split_url_at_hash = options[:split_url_at_hash] ? options[:split_url_at_hash] : false
-		@exclude_urls_with_hash = options[:exclude_urls_with_hash] ? options[:exclude_urls_with_hash] : false
-		@exclude_urls_with_extensions = options[:exclude_urls_with_extensions] ? options[:exclude_urls_with_extensions] : false
-		@proxy_list = options[:proxy_list] ? options[:proxy_list] : false
-		
-		@debug = options[:debug] ? options[:debug] : false
-	end
+  def crawl(options = {})
+    threads = options[:threads] || 1
+    max_urls = options[:max_urls]
+    filter = options[:filter]
 
-	def crawl(options = {})
+    @hydra = Typhoeus::Hydra.new(:max_concurrency => threads)
+    @global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
+    @global_queue = []
 
-		#defaults to 1 thread so people don't do a stupid amount of crawling on unsuspecting domains
-		threads = options[:threads] ? options[:threads] : 1
-		#defaults to -1 so it will always keep running until it runs out of urls
-		max_urls = options[:max_urls] ? options[:max_urls] : nil
+    @global_queue.concat @start_urls
 
-		@hydra = Typhoeus::Hydra.new(:max_concurrency => threads)
-		@global_visited = BloomFilter::Native.new(:size => 1000000, :hashes => 5, :seed => 1, :bucket => 8, :raise => false)
-		@global_queue = []
+    while not @global_queue.empty?
 
-		@global_queue << @start_url
-		
-		while(@global_queue.size > 0 && (max_urls.nil? || @global_visited.size.to_i < max_urls))
-			temp_queue = @global_queue
+      @global_queue.size.times do
+        q = @global_queue.shift
 
-			temp_queue.each do |q|
+        if !max_urls.nil? && @global_visited.size >= max_urls
+          @global_queue = []
+          break
+        end
 
-				begin
-					ip,port,user,pass = grab_proxy
- 
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true) if ip == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}") if ip != nil && user == nil
-					request = Typhoeus::Request.new(q, :timeout => 10000, :follow_location => true, :proxy => "#{ip}:#{port}", :proxy_username => user, :proxy_password => pass) if user != nil
+        if filter
+          next unless filter.call(q)
+        end
 
-					request.on_complete do |response|
+        @global_visited.insert(q)
+        puts "Processing link: #{q}" if @debug
 
-						yield response
+        ip,port,user,pass = grab_proxy
 
-						links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href')
+        options = {timeout: 10000, followlocation:true}
+        options[:proxy] = "#{ip}:#{port}" unless ip.nil?
+        options[:proxy_username] = user unless user.nil?
+        options[:proxy_password] = pass unless pass.nil?
+        if @cookies_enabled
+          cookie_file = Tempfile.new 'cookies'
+          options[:cookiefile] = cookie_file
+          options[:cookiejar] = cookie_file
+        end
 
-						links.each do |link|
-							if(internal_link?(link, response.effective_url) && !@global_visited.include?(make_absolute(link, response.effective_url)) && no_hash_in_url?(link) && ignore_extensions(link))
-								
-								sanitized_link = sanitize_link(split_url_at_hash(link))
-								if(sanitized_link)
+        request = Typhoeus::Request.new(q, options)
 
-									absolute_link = make_absolute(sanitized_link, response.effective_url)
-									if(absolute_link)
-										@global_queue << absolute_link
-									end
-								end
-							end
-						end
+        request.on_complete do |response|
 
-					end
+          next unless Arachnid.parse_domain(response.effective_url) == @domain
 
-					@hydra.queue request
+          yield response
 
-				rescue URI::InvalidURIError, NoMethodError => e
-					puts "Exception caught: #{e}" if @debug == true
-				end
+          links = Nokogiri::HTML.parse(response.body).xpath('.//a/@href').map(&:to_s)
+          links.each do |link|
+            next if link.match(/^\(|^javascript:|^mailto:|^#|^\s*$|^about:/)
+            begin
 
-				@global_visited.insert(q)
-				@global_queue.delete(q)
+              if internal_link?(link, response.effective_url) && 
+                !@global_visited.include?(make_absolute(link, response.effective_url)) &&
+                no_hash_in_url?(link) &&
+                extension_not_ignored?(link)
 
-			end
+                absolute_link = make_absolute(split_url_at_hash(link), response.effective_url)
+                @global_queue << absolute_link unless @global_queue.include?(absolute_link)
+              end
 
-			@hydra.run
+            rescue Addressable::URI::InvalidURIError => e
+              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message}) on page #{q}" if @debug
+            end
+          end
 
-		end
+        end
 
-	end
+        @hydra.queue request
 
-	def grab_proxy
+      end
+      puts "Running the hydra" if @debug
+      @hydra.run
+    end
 
-		return nil unless @proxy_list
+  end
 
-		return @proxy_list.sample.split(':')
+  def grab_proxy
+    return nil unless @proxy_list
 
-	end
+    @proxy_list.sample.split(':')
+  end
 
-	def parse_domain(url)
-		puts "Parsing URL: #{url}" if @debug
+  def self.parse_domain(url)
+    parsed_domain = Domainatrix.parse(url)
 
-		begin
-			parsed_domain = Domainatrix.parse(url)
+    if(parsed_domain.subdomain != "")
+      parsed_domain.subdomain + '.' + parsed_domain.domain + '.' + parsed_domain.public_suffix
+    else
+      parsed_domain.domain + '.' + parsed_domain.public_suffix
+    end
+  end
 
-			if(parsed_domain.subdomain != "")
-				parsed_domain.subdomain + '.' + parsed_domain.domain + '.' + parsed_domain.public_suffix
-			else
-				parsed_domain.domain + '.' + parsed_domain.public_suffix
-			end
-		rescue NoMethodError, Addressable::URI::InvalidURIError => e
-			puts "URL Parsing Exception (#{url}): #{e}"
-			return nil
-		end
-	end
+  def internal_link?(url, effective_url)
+    absolute_url = make_absolute(url, effective_url)
+    parsed_url = Arachnid.parse_domain(absolute_url)
+    @domain == parsed_url
+  end
 
-	def internal_link?(url, effective_url)
+  def split_url_at_hash(url)
+    return url unless @split_url_at_hash
 
-		absolute_url = make_absolute(url, effective_url)
+    url.split('#')[0]
+  end
 
-		parsed_url = parse_domain(absolute_url)
-		if(@domain == parsed_url)
-			return true
-		else
-			return false
-		end
-	end
+  def no_hash_in_url?(url)
+    !@exclude_urls_with_hash || url.scan(/#/).empty?
+  end
 
-	def split_url_at_hash(url)
-		return url.to_s unless @split_url_at_hash
+  def extension_not_ignored?(url)
+    return true if url.empty?
+    return true unless @exclude_urls_with_extensions
 
-		return url.to_s.split('#')[0]
+    @exclude_urls_with_extensions.find { |e| url.downcase.end_with? e.downcase }.nil?
+  end
 
-	end
-
-	def no_hash_in_url?(url)
-		return true unless @exclude_urls_with_hash
-
-		if(url.to_s.scan(/#/).size > 0)
-			return false
-		else
-			return true
-		end
-	end
-
-	def ignore_extensions(url)
-		return true if url.to_s.length == 0
-		return true unless @exclude_urls_with_extensions
-
-		not_found = true
-
-		@exclude_urls_with_extensions.each do |e|
-			if(url.to_s.length > e.size && url.to_s[-e.size .. -1].downcase == e.to_s.downcase)
-				not_found = false
-				puts "#{e} Found At URL: #{url}" if @debug
-			end
-		end
-
-		return not_found
-	end
-
-	def sanitize_link(url)
-		begin
-			return url.gsub(/\s+/, "%20")
-		rescue
-			return false
-		end
-	end
-
-	def make_absolute( href, root )
-
-		begin
-	  		URI.parse(root).merge(URI.parse(split_url_at_hash(href.to_s.gsub(/\s+/, "%20")))).to_s
-	  	rescue URI::InvalidURIError, URI::InvalidComponentError => e
-	  		return false
-	  	end
-	end
+  def make_absolute(href, root)
+    Addressable::URI.parse(root).join(Addressable::URI.parse(href)).to_s
+  end
 
 end
+
+
