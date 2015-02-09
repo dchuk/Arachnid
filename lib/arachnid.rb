@@ -12,7 +12,7 @@ class Arachnid
   def initialize(urls, options = {})
     @start_urls = urls.is_a?(Array) ? urls : [urls]
     @debug = options[:debug]
-    @domain = parse_domain(@start_urls[0])
+    @domain = Arachnid.parse_domain(@start_urls[0])
     @split_url_at_hash = options[:split_url_at_hash]
     @exclude_urls_with_hash = options[:exclude_urls_with_hash]
     @exclude_urls_with_extensions = options[:exclude_urls_with_extensions]
@@ -64,7 +64,7 @@ class Arachnid
 
         request.on_complete do |response|
 
-          next unless parse_domain(response.effective_url) == @domain
+          next unless Arachnid.parse_domain(response.effective_url) == @domain
 
           yield response
 
@@ -104,7 +104,7 @@ class Arachnid
     @proxy_list.sample.split(':')
   end
 
-  def parse_domain(url)
+  def self.parse_domain(url)
     parsed_domain = Domainatrix.parse(url)
 
     if(parsed_domain.subdomain != "")
@@ -116,7 +116,7 @@ class Arachnid
 
   def internal_link?(url, effective_url)
     absolute_url = make_absolute(url, effective_url)
-    parsed_url = parse_domain(absolute_url)
+    parsed_url = Arachnid.parse_domain(absolute_url)
     @domain == parsed_url
   end
 

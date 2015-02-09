@@ -20,9 +20,7 @@ class ArachnidTest < Minitest::Test
   end
 
   def test_parses_domain
-    arachnid = Arachnid.new 'example.com'
-
-    assert_equal arachnid.parse_domain('www.example.com/link'), 'www.example.com'
+    assert_equal Arachnid.parse_domain('www.example.com/link'), 'www.example.com'
   end
 
   def test_hash_detection
