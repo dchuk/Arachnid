@@ -82,8 +82,8 @@ class Arachnid
                 @global_queue << absolute_link unless @global_queue.include?(absolute_link)
               end
 
-            rescue => e
-              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message}) on page #{q}"
+            rescue Addressable::URI::InvalidURIError => e
+              $stderr.puts "#{e.class}: Ignored link #{link} (#{e.message}) on page #{q}" if @debug
             end
           end
 
